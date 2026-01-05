@@ -72,10 +72,19 @@
         }
 
         .player-input-group {
-            display: flex;
+            display: grid;
+            grid-template-columns: 1fr auto auto;
             gap: 10px;
             margin-bottom: 15px;
             animation: slideIn 0.3s ease-out;
+        }
+
+        .player-input-group input {
+            width: 100%;
+        }
+
+        .player-input-group .btn.btn-remove-hidden {
+            visibility: hidden;
         }
 
         @keyframes slideIn {
@@ -472,8 +481,7 @@
         .game-view {
             display: none;
             text-align: center;
-            min-height: 400px;
-            display: flex;
+            min-height: 20px;
             flex-direction: column;
             justify-content: center;
             align-items: center;
@@ -704,6 +712,11 @@
                             <line x1="5" y1="12" x2="19" y2="12"></line>
                         </svg>
                     </button>
+                    <button class="btn btn-remove-hidden" title="Remove player">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                </button>
                 </div>
             </div>
 
@@ -779,6 +792,12 @@
 
             inputGroup.innerHTML = `
                 <input type="text" class="player-input" placeholder="Player ${playerCount}" data-player="${playerCount}">
+                <button class="btn btn-add" onclick="addPlayer()" title="Add player">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                    </button>
                 <button class="btn btn-remove" onclick="removePlayer(this)" title="Remove player">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -909,7 +928,7 @@
         // Load words from CSV file
         async function loadWords(language) {
             try {
-                const response = await fetch(`http://localhost:8000/words/words_${language}.csv`);
+                const response = await fetch(`/words/words_${language}.csv`);
                 const text = await response.text();
                 wordList = text.split('\n')
                     .map(word => word.trim())
