@@ -928,7 +928,7 @@
         // Load words from CSV file
         async function loadWords(language) {
             try {
-                const response = await fetch(`/words/words_${language}.csv`);
+                const response = await fetch(`words/words_${language}.csv`);
                 const text = await response.text();
                 wordList = text.split('\n')
                     .map(word => word.trim())
