@@ -738,6 +738,12 @@
                     </svg>
                 </button>
             </div>
+            <div class="checkbox-group" style="margin-top: 15px; text-align: center;">
+                <label class="checkbox-label" style="justify-content: center;">
+                    <input type="checkbox" id="enableSuggestions" onchange="onSuggestionsToggle()">
+                    <span>Enable suggestions for impostors</span>
+                </label>
+            </div>
         </div>
 
         <!-- Custom Words Section -->
@@ -942,11 +948,44 @@
             }
         }
 
+        // Suggestion pairs (hint mode)
+        let suggestionWordList = [];
+
+        async function loadSuggestions() {
+            if (suggestionWordList.length > 0) return;
+            try {
+                const response = await fetch(`words/words_${currentLanguage}_w_suggestions.csv`);
+                const text = await response.text();
+                suggestionWordList = text.split('\n')
+                    .map(line => line.trim())
+                    .filter(line => line.length > 0)
+                    .map(line => {
+                        const parts = line.split(',');
+                        return { word: parts[0].trim(), hint: parts[1] ? parts[1].trim() : '' };
+                    })
+                    .filter(pair => pair.word && pair.hint);
+                console.log(`Loaded ${suggestionWordList.length} suggestion pairs`);
+            } catch (error) {
+                console.error('Error loading suggestions:', error);
+                suggestionWordList = [];
+            }
+        }
+
+        function onSuggestionsToggle() {
+            if (document.getElementById('enableSuggestions').checked) {
+                loadSuggestions();
+            }
+        }
+
         // Change language
         function changeLanguage() {
             const languageSelect = document.getElementById('languageSelect');
             currentLanguage = languageSelect.value;
             loadWords(currentLanguage);
+            suggestionWordList = [];
+            if (document.getElementById('enableSuggestions').checked) {
+                loadSuggestions();
+            }
         }
 
         // Load words when page loads (default to English)
@@ -1062,7 +1101,9 @@
             players: [],
             currentPlayerIndex: 0,
             showingRole: false,
-            word: ''
+            word: '',
+            impostorWord: '',
+            hintMode: false
         };
 
         function startGame() {
@@ -1079,34 +1120,56 @@
                 return;
             }
 
-            // Determine which word list to use
-            const useOnlyCustomWords = document.getElementById('useOnlyCustomWords').checked;
-            let availableWords = [];
+            // Determine word(s) to use
+            const hintModeEnabled = document.getElementById('enableSuggestions').checked;
 
-            if (useOnlyCustomWords) {
-                // Use only custom words
-                if (customWords.length === 0) {
-                    alert('Please add at least one custom word, or uncheck "Use only custom words"!');
-                    return;
-                }
-                availableWords = customWords;
-            } else {
-                // Merge custom words with language word list
-                if (wordList.length === 0) {
-                    alert('Words are still loading, please wait a moment...');
-                    return;
-                }
-                availableWords = [...wordList, ...customWords];
-            }
-
-            // Validate we have at least one word
-            if (availableWords.length === 0) {
-                alert('No words available! Please add custom words or select a language.');
+            if (hintModeEnabled && customWords.length > 0) {
+                alert('Suggestions for impostors and custom words cannot be used together. Please either disable suggestions or remove your custom words.');
                 return;
             }
 
-            // Choose a random word
-            const word = availableWords[Math.floor(Math.random() * availableWords.length)];
+            gameState.hintMode = hintModeEnabled;
+            gameState.impostorWord = '';
+            let word;
+
+            if (hintModeEnabled) {
+                if (suggestionWordList.length === 0) {
+                    alert('Suggestions are still loading, please wait a moment...');
+                    loadSuggestions();
+                    return;
+                }
+                const pair = suggestionWordList[Math.floor(Math.random() * suggestionWordList.length)];
+                word = pair.word;
+                gameState.impostorWord = pair.hint;
+            } else {
+                // Determine which word list to use
+                const useOnlyCustomWords = document.getElementById('useOnlyCustomWords').checked;
+                let availableWords = [];
+
+                if (useOnlyCustomWords) {
+                    // Use only custom words
+                    if (customWords.length === 0) {
+                        alert('Please add at least one custom word, or uncheck "Use only custom words"!');
+                        return;
+                    }
+                    availableWords = customWords;
+                } else {
+                    // Merge custom words with language word list
+                    if (wordList.length === 0) {
+                        alert('Words are still loading, please wait a moment...');
+                        return;
+                    }
+                    availableWords = [...wordList, ...customWords];
+                }
+
+                // Validate we have at least one word
+                if (availableWords.length === 0) {
+                    alert('No words available! Please add custom words or select a language.');
+                    return;
+                }
+
+                word = availableWords[Math.floor(Math.random() * availableWords.length)];
+            }
 
             // Create array of roles
             const roles = [];
@@ -1165,6 +1228,17 @@
                         </div>
                         <div class="word-display">${gameState.word}</div>
                         <div class="tap-instruction">Remember the word, then tap to continue</div>
+                    </div>
+                `;
+            } else if (gameState.hintMode) {
+                gameContent.innerHTML = `
+                    <div class="player-reveal">
+                        <div class="role-display role-impostor">
+                            You are an IMPOSTOR
+                        </div>
+                        <div style="font-size: 1em; color: #666; margin-top: 20px;">Here's your hint:</div>
+                        <div class="word-display">${gameState.impostorWord}</div>
+                        <div class="tap-instruction">Remember your hint, then tap to continue</div>
                     </div>
                 `;
             } else {
@@ -1234,7 +1308,9 @@
                 players: [],
                 currentPlayerIndex: 0,
                 showingRole: false,
-                word: ''
+                word: '',
+                impostorWord: '',
+                hintMode: false
             };
 
             // Clear game content
