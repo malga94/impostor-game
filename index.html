@@ -1094,6 +1094,13 @@
                     }
                 });
             }
+
+            document.getElementById('playerInputs').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && e.target.classList.contains('player-input')) {
+                    e.preventDefault();
+                    addPlayer();
+                }
+            });
         });
 
         // Game state
