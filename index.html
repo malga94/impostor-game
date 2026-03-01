@@ -1122,6 +1122,12 @@
 
             // Determine word(s) to use
             const hintModeEnabled = document.getElementById('enableSuggestions').checked;
+
+            if (hintModeEnabled && customWords.length > 0) {
+                alert('Suggestions for impostors and custom words cannot be used together. Please either disable suggestions or remove your custom words.');
+                return;
+            }
+
             gameState.hintMode = hintModeEnabled;
             gameState.impostorWord = '';
             let word;
