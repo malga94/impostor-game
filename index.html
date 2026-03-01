@@ -954,7 +954,7 @@
         async function loadSuggestions() {
             if (suggestionWordList.length > 0) return;
             try {
-                const response = await fetch('words/words_english_w_suggestions.csv');
+                const response = await fetch(`words/words_${currentLanguage}_w_suggestions.csv`);
                 const text = await response.text();
                 suggestionWordList = text.split('\n')
                     .map(line => line.trim())
@@ -982,6 +982,10 @@
             const languageSelect = document.getElementById('languageSelect');
             currentLanguage = languageSelect.value;
             loadWords(currentLanguage);
+            suggestionWordList = [];
+            if (document.getElementById('enableSuggestions').checked) {
+                loadSuggestions();
+            }
         }
 
         // Load words when page loads (default to English)
